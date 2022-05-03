@@ -1,6 +1,7 @@
 extern crate kernel32;
 extern crate winapi;
 
+use std::cell::RefCell;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{self, Write};
@@ -12,26 +13,31 @@ const LOOP_SIZE: u32 = 1000000;
 
 fn main() -> io::Result<()> {
     let mut stdout = createRawStdout();
+    let stdoutRef = RefCell::new(stdout);
 
     let mut testSuite = PerfSuite::new(vec![
-        PerfTestData::new::<File>("println!()", |n, _: &mut File| {
+        PerfTestData::new::<()>("println!()", |n, _| {
             println!("Hello, world! {}\n", n);
         }),
-        PerfTestData::new::<File>("print!()", |n, _: &mut File| {
+        PerfTestData::new::<()>("print!()", |n, _| {
             print!("Hello, world! {}\n", n);
         }),
-        PerfTestData::new::<File>("write!()", |n, stdout: &mut File| {
-            write!(stdout, "Hello, world! {}\n", n);
+        PerfTestData::new::<()>("write!()", |n, _| {
+            write!(stdoutRef.borrow_mut(), "Hello, world! {}\n", n);
         }),
-        PerfTestData::new::<File>("stdout.write_all()", |n, stdout: &mut File| {
-            stdout.write_all(format!("Hello, world! {}\n", n).as_bytes());
+        PerfTestData::new::<()>("stdout.write_all()", |n, _| {
+            stdoutRef
+                .borrow_mut()
+                .write_all(format!("Hello, world! {}\n", n).as_bytes());
         }),
-        PerfTestData::new::<File>("stdout.write()", |n, stdout: &mut File| {
-            stdout.write(format!("Hello, world! {}\n", n).as_bytes());
+        PerfTestData::new::<()>("stdout.write()", |n, _| {
+            stdoutRef
+                .borrow_mut()
+                .write(format!("Hello, world! {}\n", n).as_bytes());
         }),
     ]);
 
-    testSuite.exec(&mut stdout);
+    testSuite.exec(&mut ());
 
     Ok(())
 }
@@ -103,13 +109,13 @@ impl<'a, A> PerfSuite<'a, A> {
 
         for test in self.tests.iter_mut() {
             println!("Testing {}...", test.getName());
-            // waitSecs(1);
+            waitSecs(1);
 
             let elapsedTime = perfTest(test.as_mut(), args);
             elapsedTimes.push(elapsedTime);
 
             println!("Done!");
-            // waitSecs(5);
+            waitSecs(5);
         }
 
         for (idx, elapsedTime) in elapsedTimes.iter().enumerate() {
