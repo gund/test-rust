@@ -6,5 +6,5 @@ mod perf_test;
 
 fn main() {
     // perf_test::runTests();
-    dynlib::runDlib();
+    dynlib::runDynlib();
 }
