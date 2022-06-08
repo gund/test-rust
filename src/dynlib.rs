@@ -28,33 +28,26 @@ impl DynLib {
         Ok(DynLib { lib })
     }
 
-    fn getMethod<A, R>(&self, name: &str) -> Result<DynLibMethod<A, R>, libloading::Error> {
+    fn getMethod<A, R>(&self, name: &'static str) -> Result<DynLibMethod<A, R>, libloading::Error> {
         DynLibMethod::<A, R>::new(self, name)
     }
 }
 
 #[derive(Debug)]
 struct DynLibMethod<'a, A, R> {
-    name: String,
+    name: &'a str,
     method: libloading::Symbol<'a, unsafe extern "C" fn(A) -> R>,
-    argsType: PhantomData<A>,
-    retType: PhantomData<R>,
 }
 
 impl<'a, A, R> DynLibMethod<'a, A, R> {
-    fn new(lib: &'a DynLib, name: &str) -> Result<DynLibMethod<'a, A, R>, libloading::Error> {
+    fn new(lib: &'a DynLib, name: &'a str) -> Result<DynLibMethod<'a, A, R>, libloading::Error> {
         let method = unsafe {
             let libMethod: libloading::Symbol<unsafe extern "C" fn(A) -> R> =
                 lib.lib.get(name.as_bytes())?;
             libMethod
         };
 
-        Ok(DynLibMethod::<'a, A, R> {
-            name: name.to_string(),
-            method,
-            argsType: PhantomData::<A>,
-            retType: PhantomData::<R>,
-        })
+        Ok(DynLibMethod::<'a, A, R> { name, method })
     }
 
     fn call(&self, args: A) -> R {
@@ -63,7 +56,7 @@ impl<'a, A, R> DynLibMethod<'a, A, R> {
     }
 
     fn getName(&self) -> &str {
-        self.name.as_str()
+        self.name
     }
 }
 
