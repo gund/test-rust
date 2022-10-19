@@ -1,3 +1,6 @@
+#![allow(non_snake_case)]
+#![warn(non_camel_case_types)]
+
 extern crate kernel32;
 extern crate winapi;
 

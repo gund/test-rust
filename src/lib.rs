@@ -1,3 +1,6 @@
+#![allow(non_snake_case)]
+#![warn(non_camel_case_types)]
+
 #[no_mangle]
 pub extern "C" fn lib_test() {
     println!("Hello from the library!");

@@ -1,3 +1,6 @@
+#![allow(non_snake_case)]
+#![warn(non_camel_case_types)]
+
 use std::{env, marker::PhantomData, path};
 
 pub fn runDynlib() -> Result<(), libloading::Error> {
